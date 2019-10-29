@@ -6,12 +6,12 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.tubz.exception.MyRuntimeException;
 import com.tubz.models.AuthenticationRequest;
 import com.tubz.models.AuthenticationResponse;
 import com.tubz.service.MyUserDetailsService;
@@ -24,29 +24,29 @@ public class HelloController {
 	private AuthenticationManager authenticationManager;
 
 	@Autowired
-	private MyUserDetailsService UserDetailsService;
+	private MyUserDetailsService userDetailsService;
 
 	@Autowired
 	private JwtUtil jwtUtil;
 
-	@RequestMapping("/hello")
+	@GetMapping("/hello")
 	public String hello() {
 		return "Hello World";
 	}
 
 	@PostMapping("/authenticate")
-	public ResponseEntity<?> createAuthenticationToken(@RequestBody AuthenticationRequest authenticationRequest)
-			throws Exception {
+	public ResponseEntity<AuthenticationResponse> createAuthenticationToken(
+			@RequestBody AuthenticationRequest authenticationRequest) throws MyRuntimeException {
 		try {
 			authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(
-					authenticationRequest.getUsername(), authenticationRequest.getPassword())); // varify the username
+					authenticationRequest.getUsername(), authenticationRequest.getPassword())); // verify the username
 																								// and password
 		} catch (BadCredentialsException exc) {
-			throw new Exception("Incorrect username or password", exc);
+			throw new MyRuntimeException("Incorrect username or password", exc);
 		}
 
 		// Read the user details
-		final UserDetails userDetails = UserDetailsService.loadUserByUsername(authenticationRequest.getUsername());
+		final UserDetails userDetails = userDetailsService.loadUserByUsername(authenticationRequest.getUsername());
 
 		// Create JWT token using userDetails with the help of JwtUtil
 		final String jwt = jwtUtil.generateToken(userDetails);
